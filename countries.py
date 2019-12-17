@@ -16,16 +16,20 @@ class Connection:
     def get_result(self):
         try:
             response = requests.get(self.url, headers=Connection.headers)
-            response.raise_for_status()
-            return response.json()
-        except requests.exceptions.HTTPError as httpErr:
-            print("Http Error:", httpErr)
-        except requests.exceptions.ConnectionError as connErr:
-            print("Error Connecting:", connErr)
-        except requests.exceptions.Timeout as timeOutErr:
-            print("Timeout Error:", timeOutErr)
-        except requests.exceptions.RequestException as reqErr:
-            print("Something Else:", reqErr)
+            if response.status_code == 404:
+                print('Podaj prawidłową nazwę:')
+            return response
+        except requests.exceptions.HTTPError:
+            print("HTTP Error:", 'Problem z połaczneniem spróbuj pożniej.')
+            exit()
+        except requests.exceptions.ConnectionError:
+            print("Error Connecting:", 'Problem z połaczneniem spróbuj pożniej.')
+            exit()
+        except requests.exceptions.Timeout:
+            print("Timeout Error:", 'Problem z połaczneniem spróbuj pożniej.')
+            exit()
+        except requests.exceptions.RequestException:
+            print("Som return response.json()ething Else:", 'Problem z połaczneniem spróbuj pożniej.')
 
 
 if __name__ == '__main__':
@@ -39,32 +43,32 @@ if __name__ == '__main__':
            3 - Wypisze nazwe, stolice, walutę, jezyk dla konkretneg państwa(w drugi kroku trzeba podać nazwe państwa)
            """)
         user_choice = input(f'Podaj numer zapytania (Aby zakończyć wprowadz "q"): ')
-        if user_choice.isnumeric():
+        if user_choice.isnumeric() or user_choice != '':
             if user_choice == '1':
                 end_of_address = 'all'
                 conn = Connection(Connection.start_of_address + end_of_address)
                 countries = conn.get_result()
-                for country in countries:
+                for country in countries.json():
                     print(country['name'])
             elif user_choice == '2':
                 country_name = input('Podaj nazwe państwa do wyświtlenia informacji(po angelsku): ')
                 end_of_address = 'name/' + country_name.lower()
                 conn = Connection(Connection.start_of_address + end_of_address)
                 country_information = conn.get_result()
-                for information in country_information:
-                    for key, value in information.items():
-                        print(f'{key}: {value}')
+                if country_information.status_code == 200:
+                    for information in country_information.json():
+                        for key, value in information.items():
+                            print(f'{key}: {value}')
             elif user_choice == '3':
                 country_name = input('Podaj nazwe państwa do wyświtlenia informacji(po angelsku): ')
                 end_of_address = 'name/' + country_name.lower()
                 conn = Connection(Connection.start_of_address + end_of_address)
                 country_information = conn.get_result()
-                for information in country_information:
-                    print(f'Nazwa kraju {information["name"]}\n'
-                          f'Stolica: {information["capital"]}\n'
-                          f'Waluta: {information["currencies"]}\n'
-                          f'Języki {information["languages"]}')
-        elif user_choice == 'q':
-            break
-
-
+                if country_information.status_code == 200:
+                    for information in country_information.json():
+                        print(f'Nazwa kraju {information["name"]}\n'
+                              f'Stolica: {information["capital"]}\n'
+                              f'Waluta: {information["currencies"]}\n'
+                              f'Języki {information["languages"]}')
+            elif user_choice == 'q':
+                exit()
